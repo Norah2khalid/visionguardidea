@@ -77,8 +77,7 @@ export function AppShell() {
     <div className="shell" data-collapsed={collapsed ? "true" : "false"}>
       <aside className={`sidebar ${open ? "open" : ""}`}>
         <div className="brand" dir="ltr">
-          <span className="mark">VG</span>
-          {!collapsed ? <span className="logo-word"><span className="vision">VISION</span><span className="guard">GUARD</span></span> : null}
+          <img className="brand-logo" src="/visionguard-logo.png" alt="VISIONGUARD" />
         </div>
         <nav>
           {items.map((item) => {
