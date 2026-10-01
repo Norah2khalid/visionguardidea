@@ -15,12 +15,12 @@ export function HomePage() {
   return (
     <>
       <PageHeader title={`مرحبًا ${profile?.full_name ?? ""}`} subtitle="غرفة عمليات التفتيش. الآلة تدخل المنطقة الخطرة، والمفتش يبقى في موقع آمن." actions={can(profile?.role_code, "inspections.create") ? <Link className="btn-primary" style={{ display: "inline-grid", placeItems: "center" }} to="/inspections/new">تفتيش جديد</Link> : null} />
-      <div className="banner sim">وضع العرض المحلي يحفظ البيانات في هذا المتصفح. الاتصال بالدرون أو الروبوت أو التحليل الآلي غير مُفعّل.</div>
+      <div className="banner sim">وضع العرض المحلي يحفظ البيانات في هذا المتصفح. الاتصال بالدرون أو التحليل الآلي غير مُفعّل.</div>
       <div className="grid cols-4">
         <Panel><div className="kpi"><div className="muted">تفتيشات نشطة</div><div className="value">{metrics.activeInspections}</div></div></Panel>
         <Panel><div className="kpi"><div className="muted">مهام غير مغلقة</div><div className="value">{activeMissions.length}</div></div></Panel>
         <Panel><div className="kpi"><div className="muted">تنبيهات مفتوحة</div><div className="value">{metrics.unresolvedAlerts}</div></div></Panel>
-        <Panel><div className="kpi"><div className="muted">أجهزة متاحة</div><div className="value">{metrics.availableDrones + metrics.availableRobots}</div></div></Panel>
+        <Panel><div className="kpi"><div className="muted">أجهزة متاحة</div><div className="value">{metrics.availableDrones}</div></div></Panel>
       </div>
       <div className="grid cols-2">
         <Panel title="أحدث التفتيشات">

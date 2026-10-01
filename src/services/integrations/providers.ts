@@ -10,7 +10,7 @@ export function integrationCatalog(): IntegrationDescriptor[] {
   return [
     {
       id: "drone-gateway",
-      name: "بوابة الدرون والروبوت",
+      name: "بوابة الدرون",
       configured: Boolean(gateway),
       detail: gateway
         ? "العنوان مُعرّف. الإرسال الفعلي غير مفعّل في هذا الإصدار، والمحاكاة تبقى المسار التشغيلي."

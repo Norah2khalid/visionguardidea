@@ -8,7 +8,7 @@ import { EquipmentDetailPage, EquipmentListPage, FacilityDetailPage, FacilityLay
 import { HomePage } from "@/features/home/HomePage";
 import { ChecklistPage, FieldInspectionPage, InspectionDetailPage, InspectionListPage, InspectionWizardPage } from "@/features/inspections/InspectionPages";
 import { LivePage, MissionControlPage, MissionDetailPage, MissionListPage } from "@/features/missions/MissionPages";
-import { AlertsPage, DroneDetailPage, DroneListPage, HistoryPage, ReportListPage, ReportViewPage, RobotDetailPage, RobotListPage, SettingsPage, UsersPage } from "@/features/operations/OperationsPages";
+import { AlertsPage, DroneDetailPage, DroneListPage, HistoryPage, ReportListPage, ReportViewPage, SettingsPage, UsersPage } from "@/features/operations/OperationsPages";
 
 function Guard() {
   const { ready, profile, error } = useSession();
@@ -44,8 +44,6 @@ export function App() {
         <Route path="zones/:id" element={<ZoneDetailPage />} />
         <Route path="drones" element={<DroneListPage />} />
         <Route path="drones/:id" element={<DroneDetailPage />} />
-        <Route path="robots" element={<RobotListPage />} />
-        <Route path="robots/:id" element={<RobotDetailPage />} />
         <Route path="alerts" element={<AlertsPage />} />
         <Route path="history" element={<HistoryPage />} />
         <Route path="reports" element={<ReportListPage />} />

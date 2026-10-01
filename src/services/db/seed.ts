@@ -19,7 +19,6 @@ import type {
   MaintenanceRecord,
   Mission,
   MissionEvent,
-  Robot,
   Sector,
   SensorReading,
   SensorThreshold,
@@ -49,7 +48,6 @@ export const ID = {
   template: "10000000-0000-4000-8000-000000000031",
   templateDemo: "10000000-0000-4000-8000-000000000041",
   drone: "10000000-0000-4000-8000-000000000051",
-  robot: "10000000-0000-4000-8000-000000000052",
   thresholdGas: "10000000-0000-4000-8000-000000000061",
   thresholdTemp: "10000000-0000-4000-8000-000000000062",
   ins124: "10000000-0000-4000-8000-000000000101",
@@ -317,25 +315,6 @@ export function buildSeed(at = "2026-10-01T08:00:00.000Z"): AppState {
     position_label: "محطة الشحن — القطاع B",
     last_position: null,
     notes: "لا يوجد اتصال بجهاز فعلي.",
-    created_at: T,
-    updated_at: T,
-  };
-  const robot: Robot = {
-    id: ID.robot,
-    code: "VG-ROBOT-01",
-    name: "روبوت التفتيش الأرضي",
-    robot_type: "أرضي بعجلات",
-    model: "VG-R2",
-    manufacturer: "غير متصل بمصنّع",
-    sensors: ["كاميرا", "حرارة سطح", "كشف غاز قابل للضبط"],
-    battery_capacity_mah: 12000,
-    current_battery: 88,
-    operational_status: "available",
-    availability: "available",
-    current_mission_id: null,
-    location_label: "ورشة الأجهزة",
-    last_maintenance_at: "2026-08-20T09:00:00.000Z",
-    notes: "لا يوجد اتصال بروبوت فعلي.",
     created_at: T,
     updated_at: T,
   };
@@ -729,7 +708,7 @@ export function buildSeed(at = "2026-10-01T08:00:00.000Z"): AppState {
   state.inspection_templates = [template, templateDemo];
   state.inspection_template_items = [...standardItems(template.id), ...demoTemplateItems];
   state.drones = [drone];
-  state.robots = [robot];
+  state.robots = [];
   state.sensor_thresholds = thresholds;
   state.inspections = [inspection124, inspection2041, inspection2040, inspection2039, inspectionOverdue];
   state.inspection_checklists = [checklist124, ...simpleChecks.map((item) => item.checklist)];

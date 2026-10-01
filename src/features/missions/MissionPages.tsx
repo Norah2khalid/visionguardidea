@@ -19,7 +19,7 @@ export function MissionListPage() {
     <>
       <PageHeader title="المهام ومركز التحكم" subtitle="المهام المرتبطة بتفتيش جهاز تُشغَّل هنا في وضع المحاكاة." />
       <Panel>
-        {query.data.missions.length === 0 ? <EmptyState title="لا توجد مهام" body="أنشئ تفتيشًا بأسلوب درون أو روبوت." /> : (
+        {query.data.missions.length === 0 ? <EmptyState title="لا توجد مهام" body="أنشئ تفتيشًا بأسلوب درون." /> : (
           <div className="table-wrap"><table>
             <thead><tr><th>الرمز</th><th>الحالة</th><th>التقدم</th><th>المرحلة</th><th>الخطورة</th></tr></thead>
             <tbody>

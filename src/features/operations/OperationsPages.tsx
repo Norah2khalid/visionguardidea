@@ -15,9 +15,7 @@ import { loadAnalytics, loadCatalog } from "@/services/platform/queries";
 import type { Alert, DecisionAction, RoleCode } from "@/types/domain";
 
 export function DroneListPage() { return <DeviceList kind="drone" title="الدرون" />; }
-export function RobotListPage() { return <DeviceList kind="robot" title="الروبوتات" />; }
 export function DroneDetailPage() { return <DeviceDetail kind="drone" />; }
-export function RobotDetailPage() { return <DeviceDetail kind="robot" />; }
 
 function DeviceList({ kind, title }: { kind: "drone" | "robot"; title: string }) {
   const { backend, actor, profile } = useSession();
