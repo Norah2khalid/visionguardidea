@@ -206,7 +206,7 @@ export function ReportViewPage() {
         <Button onClick={() => downloadHtml(snapshot)}>تنزيل HTML</Button>
       </div>
       <article className="report-sheet">
-        <div dir="ltr" style={{ fontWeight: 700, letterSpacing: "0.08em" }}><span style={{ color: "#0f8f86" }}>VISION</span><span style={{ color: "#a97822" }}>GUARD</span></div>
+        <div dir="ltr" style={{ fontWeight: 700, letterSpacing: "0.08em" }}><span style={{ color: "#0f8f86" }}>VISION</span><span style={{ color: "#22D3EE" }}>GUARD</span></div>
         <h1>تقرير فحص</h1>
         <p>{snapshot.disclaimer}</p>
         <p>رقم التقرير: {snapshot.report_code} — مراجعة {snapshot.revision}</p>

@@ -218,9 +218,9 @@ function FacilitySvg({ zones, equipment, selected, onSelect }: { zones: Inspecti
       {zones.map((zone) => <polygon key={zone.id} points={zone.boundary.points.map((point) => `${point.x},${point.y}`).join(" ")} fill={fill[zone.risk_level]} stroke="#8ea0b3" />)}
       {equipment.map((item) => (
         <g key={item.id} onClick={() => onSelect(item.id)} style={{ cursor: "pointer" }}>
-          {item.equipment_type === "tank" ? <circle cx={item.position_x ?? 0} cy={item.position_y ?? 0} r="4.2" fill={selected === item.id ? "#e4b15a" : "#163246"} stroke="#3ddec8" /> : null}
+          {item.equipment_type === "tank" ? <circle cx={item.position_x ?? 0} cy={item.position_y ?? 0} r="4.2" fill={selected === item.id ? "#22D3EE" : "#163246"} stroke="#3ddec8" /> : null}
           {item.equipment_type === "pipeline" ? <line x1={(item.position_x ?? 0) - 8} y1={item.position_y ?? 0} x2={(item.position_x ?? 0) + 8} y2={item.position_y ?? 0} stroke="#8ea0b3" strokeWidth="1.4" /> : null}
-          {item.equipment_type === "valve" ? <rect x={(item.position_x ?? 0) - 2} y={(item.position_y ?? 0) - 2} width="4" height="4" transform={`rotate(45 ${item.position_x} ${item.position_y})`} fill="#e4b15a" /> : null}
+          {item.equipment_type === "valve" ? <rect x={(item.position_x ?? 0) - 2} y={(item.position_y ?? 0) - 2} width="4" height="4" transform={`rotate(45 ${item.position_x} ${item.position_y})`} fill="#22D3EE" /> : null}
           {item.equipment_type === "tower" ? <rect x={(item.position_x ?? 0) - 1.5} y={(item.position_y ?? 0) - 6} width="3" height="10" fill="#3ddec8" /> : null}
           <text x={(item.position_x ?? 0) + 5} y={item.position_y ?? 0} fill="#e7eef4" fontSize="3">{item.code}</text>
         </g>

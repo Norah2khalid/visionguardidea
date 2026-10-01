@@ -5,7 +5,7 @@ export function simulatedEvidenceSvg(caption: string): string {
     <g opacity="0.35" stroke="#1d3a46" fill="none">
       ${Array.from({ length: 12 }, (_, i) => `<path d="M0 ${40 + i * 42} H960"/>`).join("")}
     </g>
-    <circle cx="430" cy="280" r="92" fill="#102029" stroke="#e4b15a" stroke-width="6"/>
+    <circle cx="430" cy="280" r="92" fill="#102029" stroke="#22D3EE" stroke-width="6"/>
     <rect x="392" y="168" width="76" height="28" fill="#163042" stroke="#3ddec8"/>
     <path d="M120 390 H820" stroke="#8ea0b3" stroke-width="8"/>
     <circle cx="250" cy="390" r="14" fill="#3ddec8"/>
