@@ -12,7 +12,7 @@
   --text-muted: #8ea0b3;
   --accent: #3ddec8;
   --accent-dim: rgba(61, 222, 200, 0.14);
-  --accent-2: #e4b15a;
+  --accent-2: #22D3EE;
   --success: #3cba7a;
   --warning: #e0a23a;
   --critical: #e15b4c;
@@ -119,8 +119,8 @@ tr.clickable:hover { background: rgba(255,255,255,0.03); }
 .step-pill { border: 1px solid var(--border); border-radius: 999px; padding: 4px 10px; color: var(--text-muted); font-size: 12px; }
 .step-pill.on { color: #04221d; background: var(--accent); border-color: transparent; }
 .banner {
-  border: 1px solid rgba(228, 177, 90, 0.45); background: rgba(228, 177, 90, 0.08);
-  color: #f0d7a4; border-radius: 12px; padding: 10px 12px;
+  border: 1px solid rgba(34, 211, 238, 0.45); background: rgba(34, 211, 238, 0.08);
+  color: #22D3EE; border-radius: 12px; padding: 10px 12px;
 }
 .banner.sim { border-color: rgba(61, 222, 200, 0.45); background: rgba(61, 222, 200, 0.08); color: #b8fff3; }
 .modal-back { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: grid; place-items: center; z-index: 40; padding: 16px; }

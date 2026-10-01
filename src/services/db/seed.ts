@@ -64,7 +64,7 @@ export const ID = {
 };
 
 function svgEvidence(label: string): string {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360"><rect width="640" height="360" fill="#0d141c"/><rect x="16" y="16" width="608" height="328" fill="none" stroke="#3ddec8" opacity="0.45"/><text x="32" y="48" fill="#3ddec8" font-size="16" font-family="sans-serif">VISIONGUARD — بيانات تجريبية</text><circle cx="250" cy="200" r="62" fill="none" stroke="#e4b15a" stroke-width="4"/><text x="250" y="206" fill="#e7eef4" font-size="22" text-anchor="middle" font-family="sans-serif">${label}</text><text x="360" y="190" fill="#8ea0b3" font-size="14" font-family="sans-serif">ليست لقطة من درون حقيقية</text></svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360"><rect width="640" height="360" fill="#0d141c"/><rect x="16" y="16" width="608" height="328" fill="none" stroke="#3ddec8" opacity="0.45"/><text x="32" y="48" fill="#3ddec8" font-size="16" font-family="sans-serif">VISIONGUARD — بيانات تجريبية</text><circle cx="250" cy="200" r="62" fill="none" stroke="#22D3EE" stroke-width="4"/><text x="250" y="206" fill="#e7eef4" font-size="22" text-anchor="middle" font-family="sans-serif">${label}</text><text x="360" y="190" fill="#8ea0b3" font-size="14" font-family="sans-serif">ليست لقطة من درون حقيقية</text></svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
