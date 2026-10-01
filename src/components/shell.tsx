@@ -2,7 +2,7 @@ import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Activity, Bell, Bot, Building2, ClipboardList, Cpu, FileText, History, LayoutDashboard, Menu, Plane, Radar, Settings, Shield, Users, Warehouse,
+  Activity, Bell, Building2, ClipboardList, Cpu, FileText, History, LayoutDashboard, Menu, Plane, Radar, Settings, Shield, Users, Warehouse,
 } from "lucide-react";
 import { useSession } from "@/app/session";
 import { Button } from "@/components/ui";
@@ -18,7 +18,6 @@ const NAV: { to: string; label: string; icon: typeof Bell; permission: Permissio
   { to: "/zones", label: "المناطق الخطرة", icon: Warehouse, permission: "zones.view" },
   { to: "/equipment", label: "المعدات", icon: Cpu, permission: "equipment.view" },
   { to: "/drones", label: "الدرون", icon: Plane, permission: "devices.view" },
-  { to: "/robots", label: "الروبوتات", icon: Bot, permission: "devices.view" },
   { to: "/live", label: "البيانات الحية", icon: Activity, permission: "telemetry.view" },
   { to: "/alerts", label: "التنبيهات", icon: Bell, permission: "alerts.view" },
   { to: "/history", label: "سجل التفتيش", icon: History, permission: "history.view" },
@@ -38,7 +37,6 @@ function crumbs(pathname: string): string[] {
     "/zones": "المناطق",
     "/equipment": "المعدات",
     "/drones": "الدرون",
-    "/robots": "الروبوتات",
     "/live": "البيانات الحية",
     "/alerts": "التنبيهات",
     "/history": "السجل",
@@ -58,7 +56,6 @@ function crumbs(pathname: string): string[] {
   if (pathname.startsWith("/zones/")) return ["VISIONGUARD", "المناطق", "التفاصيل"];
   if (pathname.startsWith("/equipment/")) return ["VISIONGUARD", "المعدات", "التفاصيل"];
   if (pathname.startsWith("/drones/")) return ["VISIONGUARD", "الدرون", "التفاصيل"];
-  if (pathname.startsWith("/robots/")) return ["VISIONGUARD", "الروبوتات", "التفاصيل"];
   return ["VISIONGUARD"];
 }
 

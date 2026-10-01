@@ -188,7 +188,7 @@ export function ZoneDetailPage() {
   const facility = query.data.facilities.find((item) => item.id === zone.facility_id);
   const sector = query.data.sectors.find((item) => item.id === zone.sector_id);
   const missions = query.data.missions.filter((item) => item.zone_id === zone.id && !["COMPLETED", "CANCELLED", "FAILED"].includes(item.status));
-  const devices = [...query.data.drones, ...query.data.robots].filter((item) => item.operational_status === "available");
+  const devices = query.data.drones.filter((item) => item.operational_status === "available");
   return (
     <>
       <PageHeader title={zone.name} subtitle={`${facility?.name ?? ""} — ${sector?.name ?? ""}`} actions={<Link className="btn-primary" to={`/inspections/new?facility=${zone.facility_id}&zone=${zone.id}`}>إنشاء مهمة تفتيش</Link>} />

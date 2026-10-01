@@ -24,7 +24,6 @@ export function DashboardPage() {
         <Metric label="مناطق عالية الخطورة" value={metrics.highRiskZones} />
         <Metric label="تنبيهات غير محلولة" value={metrics.unresolvedAlerts} />
         <Metric label="درون متاحة" value={metrics.availableDrones} />
-        <Metric label="روبوتات متاحة" value={metrics.availableRobots} />
         <Metric label="متوسط دورة التفتيش" value={formatDuration(metrics.averageInspectionMs)} hint={metrics.inspectionSampleSize ? `من ${metrics.inspectionSampleSize} سجلًا فيه وقت بدء وإنهاء` : "لا توجد بيانات كافية"} />
       </div>
       <div className="grid cols-2">
