@@ -72,8 +72,7 @@ function AuthFrame({ title, subtitle, children }: { title: string; subtitle: str
     <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 16 }}>
       <div className="panel" style={{ width: "min(460px, 100%)" }}>
         <div className="brand" dir="ltr" style={{ paddingInline: 0 }}>
-          <span className="mark">VG</span>
-          <span className="logo-word"><span className="vision">VISION</span><span className="guard">GUARD</span></span>
+          <img className="brand-logo" src="/visionguard-logo.png" alt="VISIONGUARD" />
         </div>
         <h1 style={{ marginTop: 8 }}>{title}</h1>
         <p className="muted">{subtitle}</p>
