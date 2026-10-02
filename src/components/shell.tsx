@@ -96,7 +96,7 @@ export function AppShell() {
             {onDashboard ? null : <div className="crumbs">{crumbs(location.pathname).map((part, index) => <span key={part}>{index ? " / " : ""}{part}</span>)}</div>}
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            {backend?.mode === "demo" ? <span className="badge warn" style={onDashboard ? { color: "#fff" } : undefined}>وضع المحاكاة — البيانات تجريبية</span> : <span className="badge info">Supabase</span>}
+            {backend?.mode === "demo" ? <span className="badge sim-label">وضع المحاكاة — البيانات تجريبية</span> : <span className="badge info">Supabase</span>}
             <Button variant="ghost" aria-label="التنبيهات" onClick={() => navigate("/alerts")}>
               <Bell size={18} /> {alerts.data ? <span className="mono">{alerts.data}</span> : null}
             </Button>
