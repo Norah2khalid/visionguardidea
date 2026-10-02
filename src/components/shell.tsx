@@ -2,7 +2,7 @@ import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Activity, Bell, Building2, ClipboardList, Cpu, FileText, History, LayoutDashboard, Menu, Plane, Radar, Settings, Shield, Users, Warehouse,
+  Activity, Bell, Building2, ClipboardList, Cpu, FileText, History, LayoutDashboard, Menu, PanelRightClose, PanelRightOpen, Plane, Radar, Settings, Warehouse,
 } from "lucide-react";
 import { useSession } from "@/app/session";
 import { Button } from "@/components/ui";
@@ -10,7 +10,6 @@ import { can, type Permission } from "@/lib/permissions";
 import { roleLabel } from "@/lib/labels";
 
 const NAV: { to: string; label: string; icon: typeof Bell; permission: Permission; end?: boolean }[] = [
-  { to: "/", label: "الرئيسية", icon: Shield, permission: "dashboard.view", end: true },
   { to: "/dashboard", label: "لوحة التحكم", icon: LayoutDashboard, permission: "dashboard.view" },
   { to: "/inspections", label: "التفتيشات", icon: ClipboardList, permission: "inspections.view" },
   { to: "/missions", label: "المهام ومركز التحكم", icon: Radar, permission: "missions.view" },
@@ -19,16 +18,14 @@ const NAV: { to: string; label: string; icon: typeof Bell; permission: Permissio
   { to: "/equipment", label: "المعدات", icon: Cpu, permission: "equipment.view" },
   { to: "/drones", label: "الدرون", icon: Plane, permission: "devices.view" },
   { to: "/live", label: "البيانات الحية", icon: Activity, permission: "telemetry.view" },
-  { to: "/alerts", label: "التنبيهات", icon: Bell, permission: "alerts.view" },
   { to: "/history", label: "سجل التفتيش", icon: History, permission: "history.view" },
   { to: "/reports", label: "التقارير", icon: FileText, permission: "reports.view" },
-  { to: "/users", label: "المستخدمون والصلاحيات", icon: Users, permission: "users.manage" },
   { to: "/settings", label: "الإعدادات", icon: Settings, permission: "dashboard.view" },
 ];
 
 function crumbs(pathname: string): string[] {
   const map: Record<string, string> = {
-    "/": "الرئيسية",
+    "/": "لوحة التحكم",
     "/dashboard": "لوحة التحكم",
     "/inspections": "التفتيشات",
     "/inspections/new": "تفتيش جديد",
@@ -41,7 +38,6 @@ function crumbs(pathname: string): string[] {
     "/alerts": "التنبيهات",
     "/history": "السجل",
     "/reports": "التقارير",
-    "/users": "المستخدمون",
     "/settings": "الإعدادات",
   };
   if (map[pathname]) return ["VISIONGUARD", map[pathname]];
@@ -95,7 +91,7 @@ export function AppShell() {
         <header className="topbar">
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <Button className="mobile-only" variant="ghost" aria-label="القائمة" onClick={() => setOpen((value) => !value)}><Menu size={18} /></Button>
-            <Button className="no-print" variant="ghost" onClick={() => setCollapsed((value) => !value)}>طي</Button>
+            <Button className="no-print" variant="ghost" aria-label="الشريط الجانبي" onClick={() => setCollapsed((value) => !value)}>{collapsed ? <PanelRightOpen size={18} /> : <PanelRightClose size={18} />}</Button>
             <div className="crumbs">{crumbs(location.pathname).map((part, index) => <span key={part}>{index ? " / " : ""}{part}</span>)}</div>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>

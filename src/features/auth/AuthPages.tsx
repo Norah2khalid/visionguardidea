@@ -27,7 +27,7 @@ export function LoginPage() {
     void session.adminExists().then((exists) => setNeedsSetup(!exists)).catch(() => setNeedsSetup(false));
   }, [session]);
   if (!session.ready) return <Loading />;
-  if (session.profile) return <Navigate to="/" replace />;
+  if (session.profile) return <Navigate to="/dashboard" replace />;
   return (
     <AuthFrame title="دخول غرفة العمليات" subtitle="البيانات تُحفظ في وضع العرض على هذا المتصفح إلى أن يُربط Supabase.">
       <form className="grid" onSubmit={form.handleSubmit(async (values) => {
@@ -49,7 +49,7 @@ export function SetupPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const form = useForm<z.infer<typeof setupSchema>>({ resolver: zodResolver(setupSchema) });
   if (!session.ready) return <Loading />;
-  if (session.profile) return <Navigate to="/" replace />;
+  if (session.profile) return <Navigate to="/dashboard" replace />;
   return (
     <AuthFrame title="تهيئة المدير الأول" subtitle="لا يُنشأ حساب مدير عام. أول حساب يُنشأ من هذه الشاشة يصبح مديرًا فقط إذا لم يوجد مدير.">
       <form className="grid" onSubmit={form.handleSubmit(async (values) => {
