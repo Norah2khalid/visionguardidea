@@ -68,6 +68,7 @@ export function AppShell() {
     queryFn: async () => (await backend!.db.list("alerts")).filter((alert) => !alert.read_at && alert.resolution_status !== "resolved").length,
   });
   const items = NAV.filter((item) => profile && can(profile.role_code, item.permission));
+  const onDashboard = location.pathname === "/dashboard";
 
   return (
     <div className="shell" data-collapsed={collapsed ? "true" : "false"}>
@@ -92,10 +93,10 @@ export function AppShell() {
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <Button className="mobile-only" variant="ghost" aria-label="القائمة" onClick={() => setOpen((value) => !value)}><Menu size={18} /></Button>
             <Button className="no-print" variant="ghost" aria-label="الشريط الجانبي" onClick={() => setCollapsed((value) => !value)}>{collapsed ? <PanelRightOpen size={18} /> : <PanelRightClose size={18} />}</Button>
-            <div className="crumbs">{crumbs(location.pathname).map((part, index) => <span key={part}>{index ? " / " : ""}{part}</span>)}</div>
+            {onDashboard ? null : <div className="crumbs">{crumbs(location.pathname).map((part, index) => <span key={part}>{index ? " / " : ""}{part}</span>)}</div>}
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            {backend?.mode === "demo" ? <span className="badge warn">وضع المحاكاة — البيانات تجريبية</span> : <span className="badge info">Supabase</span>}
+            {backend?.mode === "demo" ? <span className="badge warn" style={onDashboard ? { color: "#fff" } : undefined}>وضع المحاكاة — البيانات تجريبية</span> : <span className="badge info">Supabase</span>}
             <Button variant="ghost" aria-label="التنبيهات" onClick={() => navigate("/alerts")}>
               <Bell size={18} /> {alerts.data ? <span className="mono">{alerts.data}</span> : null}
             </Button>
@@ -105,7 +106,6 @@ export function AppShell() {
                 <div className="menu-pop">
                   <div className="muted">{profile ? roleLabel[profile.role_code] : ""}</div>
                   <div className="muted">{profile?.email}</div>
-                  <Button variant="ghost" onClick={() => { setMenu(false); navigate("/settings"); }}>الإعدادات</Button>
                   <Button variant="danger" onClick={() => void signOut()}>تسجيل الخروج</Button>
                 </div>
               ) : null}
