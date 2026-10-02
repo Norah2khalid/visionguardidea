@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { useSession } from "@/app/session";
 import { Button, EmptyState, ErrorState, Field, InspectionBadge, Loading, Modal, PageHeader, Panel, SeverityBadge } from "@/components/ui";
 import { formatDateTime, formatPercent } from "@/lib/format";
@@ -12,7 +9,7 @@ import { can } from "@/lib/permissions";
 import { integrationCatalog, probeDeviceGateway } from "@/services/integrations/providers";
 import { getAnalysisProvider } from "@/services/analysis/analysisService";
 import { loadAnalytics, loadCatalog } from "@/services/platform/queries";
-import type { Alert, DecisionAction, RoleCode } from "@/types/domain";
+import type { Alert, DecisionAction } from "@/types/domain";
 
 export function DroneListPage() { return <DeviceList kind="drone" title="الدرون" />; }
 export function DroneDetailPage() { return <DeviceDetail kind="drone" />; }
@@ -249,52 +246,6 @@ function downloadHtml(snapshot: { report_code: string; disclaimer: string; inspe
   link.download = `${snapshot.report_code}.html`;
   link.click();
   URL.revokeObjectURL(url);
-}
-
-const userSchema = z.object({
-  fullName: z.string().min(3),
-  email: z.string().email(),
-  password: z.string().min(10),
-  role: z.enum(["ADMIN", "INSPECTOR", "OPERATOR"]),
-});
-
-export function UsersPage() {
-  const { backend, profile } = useSession();
-  const session = useSession();
-  const query = useQuery({ queryKey: ["catalog"], enabled: Boolean(backend), queryFn: () => loadCatalog(backend!.db) });
-  const form = useForm<z.infer<typeof userSchema>>({ resolver: zodResolver(userSchema), defaultValues: { role: "INSPECTOR", fullName: "", email: "", password: "" } });
-  const [error, setError] = useState<string | null>(null);
-  if (!profile || !can(profile.role_code, "users.manage")) return <EmptyState title="هذه الشاشة للمدير فقط" />;
-  if (!query.data) return <Loading />;
-  return (
-    <>
-      <PageHeader title="المستخدمون والصلاحيات" subtitle={backend?.mode === "demo" ? "كلمات المرور تُخزَّن كبصمة مملحة في وضع العرض، ولا تُحفظ كنص." : "إنشاء المستخدمين عبر Supabase يتطلب نشر دالة create-user."} />
-      <Panel title="حساب جديد">
-        <form className="grid cols-2" onSubmit={form.handleSubmit(async (values) => {
-          setError(null);
-          try { await session.createUser(values); form.reset(); } catch (caught) { setError(caught instanceof Error ? caught.message : "تعذر الإنشاء"); }
-        })}>
-          <Field label="الاسم"><input className="input" {...form.register("fullName")} /></Field>
-          <Field label="البريد"><input className="input" dir="ltr" {...form.register("email")} /></Field>
-          <Field label="كلمة المرور"><input className="input" type="password" dir="ltr" {...form.register("password")} /></Field>
-          <Field label="الدور"><select className="select" {...form.register("role")}>{(["ADMIN", "INSPECTOR", "OPERATOR"] as RoleCode[]).map((role) => <option key={role} value={role}>{roleLabel[role]}</option>)}</select></Field>
-          {error ? <ErrorState message={error} /> : null}
-          <Button variant="primary" type="submit">حفظ</Button>
-        </form>
-      </Panel>
-      <Panel>
-        {query.data.profiles.map((item) => (
-          <div key={item.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "8px 0" }}>
-            <span>{item.full_name} — {item.email}</span>
-            <select className="select" value={item.role_code} onChange={(event) => void session.updateUser(item.id, { role_code: event.target.value as RoleCode })}>
-              {(["ADMIN", "INSPECTOR", "OPERATOR"] as RoleCode[]).map((role) => <option key={role} value={role}>{roleLabel[role]}</option>)}
-            </select>
-            <Button variant="ghost" onClick={() => void session.updateUser(item.id, { is_active: !item.is_active })}>{item.is_active ? "تعطيل" : "تفعيل"}</Button>
-          </div>
-        ))}
-      </Panel>
-    </>
-  );
 }
 
 export function SettingsPage() {
