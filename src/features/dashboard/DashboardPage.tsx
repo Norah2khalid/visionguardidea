@@ -14,7 +14,7 @@ export function DashboardPage() {
   if (!query.data || !analytics.data) return <Loading />;
   const { metrics, byStatus, recentInspections, activeMissions, latestPoints, recentReports, state } = query.data;
   const known = new Set<string>(INSPECTION_STATUSES);
-  const rows: { key: string; label: string; count: number }[] = INSPECTION_STATUSES.map((status) => ({
+  const rows: { key: string; label: string; count: number }[] = INSPECTION_STATUSES.filter((status) => status !== "DRAFT" && status !== "CANCELLED").map((status) => ({
     key: status,
     label: inspectionStatusLabel[status],
     count: byStatus[status] ?? 0,
