@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useSession } from "@/app/session";
 import { InspectionBadge, Loading, MissionBadge, PageHeader, Panel } from "@/components/ui";
 import { formatDuration } from "@/lib/analytics";
 import { inspectionStatusLabel, pointCategoryLabel } from "@/lib/labels";
 import { loadAnalytics, loadDashboard } from "@/services/platform/queries";
+import { INSPECTION_STATUSES } from "@/types/domain";
 
 export function DashboardPage() {
   const { backend } = useSession();
@@ -13,7 +13,14 @@ export function DashboardPage() {
   const analytics = useQuery({ queryKey: ["analytics"], enabled: Boolean(backend), queryFn: () => loadAnalytics(backend!.db) });
   if (!query.data || !analytics.data) return <Loading />;
   const { metrics, byStatus, recentInspections, activeMissions, latestPoints, recentReports, state } = query.data;
-  const chart = Object.entries(byStatus).map(([status, count]) => ({ name: inspectionStatusLabel[status as keyof typeof inspectionStatusLabel] ?? status, count }));
+  const known = new Set<string>(INSPECTION_STATUSES);
+  const rows: { key: string; label: string; count: number }[] = INSPECTION_STATUSES.map((status) => ({
+    key: status,
+    label: inspectionStatusLabel[status],
+    count: byStatus[status] ?? 0,
+  }));
+  const unknown = Object.entries(byStatus).filter(([status]) => !known.has(status)).reduce((sum, [, count]) => sum + count, 0);
+  if (unknown > 0) rows.push({ key: "unknown", label: "غير محدد", count: unknown });
   return (
     <>
       <PageHeader title="لوحة التحكم" subtitle="المؤشرات محسوبة من السجلات المخزنة، وليست نسب تحسن تشغيلية مقدّرة." />
@@ -28,18 +35,15 @@ export function DashboardPage() {
       </div>
       <div className="grid cols-2">
         <Panel title="التفتيشات حسب الحالة">
-          {chart.length === 0 ? <p className="muted">لا توجد بيانات للرسم.</p> : (
-            <div dir="ltr" style={{ height: 240 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chart}>
-                  <XAxis dataKey="name" stroke="#8ea0b3" />
-                  <YAxis allowDecimals={false} stroke="#8ea0b3" />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#3ddec8" radius={4} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
+          <div className="status-summary">
+            {rows.map((row) => (
+              <div key={row.key} className="status-row">
+                <span className="status-dot" aria-hidden="true" />
+                <span>{row.label}</span>
+                <span className="status-count">{row.count}</span>
+              </div>
+            ))}
+          </div>
         </Panel>
         <Panel title="دورة العمل المقاسة">
           <p>متوسط مدة المهمة: {formatDuration(analytics.data.missionDuration.averageMs)}</p>
