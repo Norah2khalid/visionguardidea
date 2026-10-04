@@ -1,36 +1,25 @@
 import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Activity, Bell, Bot, Building2, ClipboardList, Cpu, FileText, History, LayoutDashboard, Menu, Plane, Radar, Settings, Shield, Users, Warehouse,
-} from "lucide-react";
+import { Bell, ClipboardList, FileText, History, LayoutDashboard, Menu } from "lucide-react";
 import { useSession } from "@/app/session";
 import { Button } from "@/components/ui";
 import { can, type Permission } from "@/lib/permissions";
 import { roleLabel } from "@/lib/labels";
+import type { RoleCode } from "@/types/domain";
 
 const NAV: { to: string; label: string; icon: typeof Bell; permission: Permission; end?: boolean }[] = [
-  { to: "/", label: "الرئيسية", icon: Shield, permission: "dashboard.view", end: true },
   { to: "/dashboard", label: "لوحة التحكم", icon: LayoutDashboard, permission: "dashboard.view" },
-  { to: "/inspections", label: "التفتيشات", icon: ClipboardList, permission: "inspections.view" },
-  { to: "/missions", label: "المهام ومركز التحكم", icon: Radar, permission: "missions.view" },
-  { to: "/facilities", label: "المنشآت", icon: Building2, permission: "facilities.view" },
-  { to: "/zones", label: "المناطق الخطرة", icon: Warehouse, permission: "zones.view" },
-  { to: "/equipment", label: "المعدات", icon: Cpu, permission: "equipment.view" },
-  { to: "/drones", label: "الدرون", icon: Plane, permission: "devices.view" },
-  { to: "/robots", label: "الروبوتات", icon: Bot, permission: "devices.view" },
-  { to: "/live", label: "البيانات الحية", icon: Activity, permission: "telemetry.view" },
-  { to: "/alerts", label: "التنبيهات", icon: Bell, permission: "alerts.view" },
-  { to: "/history", label: "سجل التفتيش", icon: History, permission: "history.view" },
+  { to: "/work", label: "المهام ومواقع التفتيش", icon: ClipboardList, permission: "inspections.view" },
   { to: "/reports", label: "التقارير", icon: FileText, permission: "reports.view" },
-  { to: "/users", label: "المستخدمون والصلاحيات", icon: Users, permission: "users.manage" },
-  { to: "/settings", label: "الإعدادات", icon: Settings, permission: "dashboard.view" },
+  { to: "/history", label: "سجل التفتيش", icon: History, permission: "history.view" },
 ];
 
 function crumbs(pathname: string): string[] {
   const map: Record<string, string> = {
-    "/": "الرئيسية",
+    "/": "لوحة التحكم",
     "/dashboard": "لوحة التحكم",
+    "/work": "المهام ومواقع التفتيش",
     "/inspections": "التفتيشات",
     "/inspections/new": "تفتيش جديد",
     "/missions": "المهام",
@@ -63,7 +52,7 @@ function crumbs(pathname: string): string[] {
 }
 
 export function AppShell() {
-  const { profile, backend, signOut } = useSession();
+  const { profile, account, backend, signOut, setViewRole, viewRole } = useSession();
   const location = useLocation();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
@@ -104,15 +93,20 @@ export function AppShell() {
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             {backend?.mode === "demo" ? <span className="badge warn">وضع المحاكاة — البيانات تجريبية</span> : <span className="badge info">Supabase</span>}
-            <Button variant="ghost" aria-label="التنبيهات" onClick={() => navigate("/alerts")}>
+            <Button variant="ghost" aria-label="التنبيهات" onClick={() => navigate("/dashboard#alerts")}>
               <Bell size={18} /> {alerts.data ? <span className="mono">{alerts.data}</span> : null}
             </Button>
+            {backend?.mode === "demo" && viewRole ? (
+              <select className="select" aria-label="عرض الدور" style={{ width: "auto", minHeight: 36 }} value={viewRole} onChange={(event) => setViewRole(event.target.value as RoleCode)}>
+                {(["ADMIN", "INSPECTOR", "OPERATOR"] as RoleCode[]).map((role) => <option key={role} value={role}>{roleLabel[role]}</option>)}
+              </select>
+            ) : null}
             <div className="menu">
-              <Button variant="ghost" onClick={() => setMenu((value) => !value)}>{profile?.full_name}</Button>
+              <Button variant="ghost" onClick={() => setMenu((value) => !value)}>{account?.full_name}</Button>
               {menu ? (
                 <div className="menu-pop">
                   <div className="muted">{profile ? roleLabel[profile.role_code] : ""}</div>
-                  <div className="muted">{profile?.email}</div>
+                  <div className="muted">{account?.email}</div>
                   <Button variant="ghost" onClick={() => { setMenu(false); navigate("/settings"); }}>الإعدادات</Button>
                   <Button variant="danger" onClick={() => void signOut()}>تسجيل الخروج</Button>
                 </div>

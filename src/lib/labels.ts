@@ -109,9 +109,18 @@ export const severityLabel: Record<Severity, string> = {
 };
 
 export const roleLabel: Record<RoleCode, string> = {
-  ADMIN: "مدير النظام",
-  INSPECTOR: "مفتش",
-  OPERATOR: "مشغّل",
+  ADMIN: "المدير",
+  INSPECTOR: "المفتش",
+  OPERATOR: "جامع التقارير",
+};
+
+export const equipmentTypeLabel: Record<"tank" | "pipeline" | "valve" | "tower" | "structure" | "other", string> = {
+  tank: "خزان",
+  pipeline: "خط أنابيب",
+  valve: "صمام",
+  tower: "برج",
+  structure: "منشأة",
+  other: "أصل آخر",
 };
 
 export const stageLabel: Record<number, string> = {

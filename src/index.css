@@ -157,8 +157,32 @@ tr.clickable:hover { background: rgba(255,255,255,0.03); }
   background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; box-shadow: var(--shadow);
 }
 .mobile-only { display: none; }
+.grid.cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.kpi-link { display: block; min-height: 100%; }
+.kpi-link:hover { border-color: rgba(61, 222, 200, 0.45); }
+.map-frame { overflow: hidden; background: #0b1219; border: 1px solid var(--border); border-radius: 12px; min-height: 320px; }
+.map-note { margin: 8px 12px 12px; }
+.zone-shape { fill: rgba(61, 222, 200, 0.05); stroke: rgba(168, 198, 214, 0.35); stroke-width: 0.4; }
+.zone-shape.risk-high { fill: rgba(225, 91, 76, 0.08); }
+.zone-shape.risk-medium { fill: rgba(224, 162, 58, 0.08); }
+.marker { fill: #8ea0b3; stroke: #e7eef4; stroke-width: 0.3; }
+.marker-normal { fill: #3cba7a; }
+.marker-warning { fill: #e0a23a; }
+.marker-critical { fill: #e15b4c; }
+.marker-inspected { fill: #22D3EE; }
+.marker-label { fill: #e7eef4; font-size: 2.6px; }
+.map-marker { cursor: pointer; }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; color: var(--text-muted); font-size: 13px; }
+.legend .marker { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-inline-end: 4px; }
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.shot { display: grid; gap: 6px; }
+.media-frame { width: 100%; max-height: 180px; object-fit: contain; background: #0b1219; border-radius: 10px; border: 1px solid var(--border); }
+.imaging { margin-top: 16px; display: grid; gap: 10px; }
+.chart-box { height: 180px; }
+.finding { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.plain-list { margin: 0; padding-inline-start: 18px; }
 @media (max-width: 1100px) {
-  .grid.cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid.cols-4, .grid.cols-5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stage-track { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 860px) {
@@ -167,7 +191,7 @@ tr.clickable:hover { background: rgba(255,255,255,0.03); }
   [dir="rtl"] .sidebar { transform: translateX(110%); }
   .sidebar.open { transform: translateX(0); }
   .mobile-only { display: inline-flex; }
-  .grid.cols-3, .grid.cols-2, .grid.cols-4 { grid-template-columns: 1fr; }
+  .grid.cols-3, .grid.cols-2, .grid.cols-4, .grid.cols-5 { grid-template-columns: 1fr; }
   .content { padding: 14px; }
 }
 @media print {
