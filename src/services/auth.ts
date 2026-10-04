@@ -39,6 +39,49 @@ export function clearDemoSession(): void {
   localStorage.removeItem(SESSION_KEY);
 }
 
+const DEMO_HOLD_KEY = "visionguard.demo.hold";
+
+export function holdDemoEntry(): void {
+  sessionStorage.setItem(DEMO_HOLD_KEY, "1");
+}
+
+export function clearDemoHold(): void {
+  sessionStorage.removeItem(DEMO_HOLD_KEY);
+}
+
+export function isDemoHeld(): boolean {
+  return sessionStorage.getItem(DEMO_HOLD_KEY) === "1";
+}
+
+/** Demo mode only: open the stored workspace without a password. Production auth is unchanged. */
+export async function openDemoSession(db: DbPort): Promise<Profile> {
+  const existing = readDemoSession();
+  if (existing) {
+    const profile = await db.get("profiles", existing.profileId);
+    if (profile?.is_active) return profile;
+  }
+  const profiles = await db.list("profiles");
+  const active = profiles.find((profile) => profile.is_active && profile.role_code === "ADMIN") ?? profiles.find((profile) => profile.is_active);
+  if (active) {
+    writeDemoSession(active.id);
+    return active;
+  }
+  const stamp = nowIso();
+  const profile: Profile = {
+    id: uid(),
+    full_name: "عرض تجريبي",
+    email: "demo@visionguard.local",
+    role_code: "ADMIN",
+    is_active: true,
+    created_at: stamp,
+    updated_at: stamp,
+  };
+  await db.insert("profiles", profile);
+  await audit(db, { id: profile.id, role_code: "ADMIN", full_name: profile.full_name, email: profile.email }, "user.demo_opened", "profiles", profile.id, null);
+  writeDemoSession(profile.id);
+  return profile;
+}
+
 export async function hasActiveAdmin(db: DbPort): Promise<boolean> {
   const profiles = await db.list("profiles");
   return profiles.some((profile) => profile.role_code === "ADMIN" && profile.is_active);

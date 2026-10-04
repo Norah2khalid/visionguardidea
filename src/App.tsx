@@ -4,8 +4,8 @@ import { AppShell } from "@/components/shell";
 import { ErrorState, Loading } from "@/components/ui";
 import { LoginPage, SetupPage } from "@/features/auth/AuthPages";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
+import { WorkPage } from "@/features/work/WorkPage";
 import { EquipmentDetailPage, EquipmentListPage, FacilityDetailPage, FacilityLayoutPage, FacilityListPage, ZoneDetailPage, ZoneListPage } from "@/features/facilities/FacilityPages";
-import { HomePage } from "@/features/home/HomePage";
 import { ChecklistPage, FieldInspectionPage, InspectionDetailPage, InspectionListPage, InspectionWizardPage } from "@/features/inspections/InspectionPages";
 import { LivePage, MissionControlPage, MissionDetailPage, MissionListPage } from "@/features/missions/MissionPages";
 import { AlertsPage, DroneDetailPage, DroneListPage, HistoryPage, ReportListPage, ReportViewPage, RobotDetailPage, RobotListPage, SettingsPage, UsersPage } from "@/features/operations/OperationsPages";
@@ -24,8 +24,9 @@ export function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/setup" element={<SetupPage />} />
       <Route element={<Guard />}>
-        <Route index element={<HomePage />} />
+        <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="work" element={<WorkPage />} />
         <Route path="inspections" element={<InspectionListPage />} />
         <Route path="inspections/new" element={<InspectionWizardPage />} />
         <Route path="inspections/:id" element={<InspectionDetailPage />} />
@@ -53,7 +54,7 @@ export function App() {
         <Route path="users" element={<UsersPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }

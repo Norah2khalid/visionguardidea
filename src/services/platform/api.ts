@@ -432,6 +432,64 @@ export function createPlatform(deps: PlatformDeps) {
       });
     },
 
+    async updateInspectionDetails(actor: Actor, id: string, patch: { notes?: string | null; planned_at?: string | null; assigned_inspector_id?: string | null; inspection_type?: string }) {
+      guard(actor, "inspections.update");
+      return db.transaction(async (tx) => {
+        const inspection = await tx.get("inspections", id);
+        if (!inspection) throw new AppError("not_found", "التفتيش غير موجود.");
+        if (inspection.status === "COMPLETED" || inspection.status === "CLOSED" || inspection.status === "CANCELLED") {
+          throw new AppError("invalid_state", "السجل المنتهي يبقى كما هو. أنشئ تفتيشًا جديدًا بدل تعديل السابق.");
+        }
+        const stamp = nowIso();
+        const next = await tx.update("inspections", id, {
+          notes: patch.notes === undefined ? inspection.notes : patch.notes,
+          planned_at: patch.planned_at === undefined ? inspection.planned_at : patch.planned_at,
+          assigned_inspector_id: patch.assigned_inspector_id === undefined ? inspection.assigned_inspector_id : patch.assigned_inspector_id,
+          inspection_type: patch.inspection_type === undefined ? inspection.inspection_type : patch.inspection_type.trim(),
+          updated_at: stamp,
+        });
+        if (patch.assigned_inspector_id && patch.assigned_inspector_id !== inspection.assigned_inspector_id) {
+          await tx.insert("inspection_assignments", {
+            id: uid(),
+            inspection_id: id,
+            assignee_id: patch.assigned_inspector_id,
+            role_in_inspection: "inspector",
+            assigned_at: stamp,
+            assigned_by: actor.id,
+          });
+        }
+        await audit(tx, actor, "inspection.updated", "inspections", id, { fields: Object.keys(patch) });
+        return next;
+      });
+    },
+
+    async startInspection(actor: Actor, id: string) {
+      guard(actor, "inspections.update");
+      return db.transaction(async (tx) => {
+        const inspection = await tx.get("inspections", id);
+        if (!inspection) throw new AppError("not_found", "التفتيش غير موجود.");
+        if (!["DRAFT", "SCHEDULED", "READY"].includes(inspection.status)) {
+          throw new AppError("invalid_state", "لا يمكن بدء التفتيش من حالته الحالية.");
+        }
+        const stamp = nowIso();
+        const updated = await tx.update("inspections", id, { status: "IN_PROGRESS", started_at: inspection.started_at ?? stamp, updated_at: stamp });
+        await audit(tx, actor, "inspection.started", "inspections", id, null);
+        return updated;
+      });
+    },
+
+    async archiveInspection(actor: Actor, id: string) {
+      guard(actor, "reports.generate");
+      return db.transaction(async (tx) => {
+        const inspection = await tx.get("inspections", id);
+        if (!inspection) throw new AppError("not_found", "التفتيش غير موجود.");
+        const stamp = nowIso();
+        const updated = await tx.update("inspections", id, { archived_at: stamp, updated_at: stamp });
+        await audit(tx, actor, "inspection.archived", "inspections", id, null);
+        return updated;
+      });
+    },
+
     async saveChecklistItem(
       actor: Actor,
       itemId: string,

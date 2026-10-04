@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { initBackend, type Backend } from "@/app/backend";
-import { bootstrapDemoAdmin, clearDemoSession, createDemoUser, demoSignIn, hasActiveAdmin, readDemoSession, updateDemoUser } from "@/services/auth";
+import { bootstrapDemoAdmin, clearDemoHold, clearDemoSession, createDemoUser, demoSignIn, hasActiveAdmin, holdDemoEntry, isDemoHeld, openDemoSession, readDemoSession, updateDemoUser } from "@/services/auth";
 import { assertPasswordPolicy } from "@/lib/password";
 import type { Actor } from "@/services/platform/context";
 import type { Profile, RoleCode } from "@/types/domain";
@@ -12,6 +12,10 @@ interface SessionValue {
   profile: Profile | null;
   actor: Actor | null;
   error: string | null;
+  account: Profile | null;
+  viewRole: RoleCode | null;
+  setViewRole: (role: RoleCode) => void;
+  enterDemo: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   bootstrap: (input: { fullName: string; email: string; password: string }) => Promise<void>;
@@ -30,7 +34,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [ready, setReady] = useState(false);
   const [backend, setBackend] = useState<Backend | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [account, setAccount] = useState<Profile | null>(null);
+  const [viewRole, setViewRoleState] = useState<RoleCode | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,12 +48,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           void queryClient.invalidateQueries();
         });
         if (next.mode === "demo") {
-          const session = readDemoSession();
-          if (session) setProfile(await next.db.get("profiles", session.profileId));
+          if (!isDemoHeld()) setAccount(await openDemoSession(next.db));
+          else {
+            const session = readDemoSession();
+            if (session) setAccount(await next.db.get("profiles", session.profileId));
+          }
         } else if (next.supabase) {
           const { data } = await next.supabase.auth.getSession();
           const userId = data.session?.user.id;
-          if (userId) setProfile(await next.db.get("profiles", userId));
+          if (userId) setAccount(await next.db.get("profiles", userId));
         }
       } catch (caught) {
         setError(caught instanceof Error ? caught.message : "تعذر تشغيل المنصة.");
@@ -59,35 +67,52 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return () => stop();
   }, [queryClient]);
 
-  const value = useMemo<SessionValue>(() => ({
+  const value = useMemo<SessionValue>(() => {
+    const profile = account && backend?.mode === "demo" && viewRole ? { ...account, role_code: viewRole } : account;
+    return {
     ready,
     backend,
     profile,
+    account,
+    viewRole: backend?.mode === "demo" ? viewRole ?? account?.role_code ?? null : account?.role_code ?? null,
+    setViewRole(role) {
+      if (backend?.mode !== "demo") return;
+      setViewRoleState(role);
+    },
+    async enterDemo() {
+      if (!backend || backend.mode !== "demo") return;
+      clearDemoHold();
+      setAccount(await openDemoSession(backend.db));
+    },
     actor: profile ? toActor(profile) : null,
     error,
     async signIn(email, password) {
       if (!backend) throw new Error("المنصة غير جاهزة.");
+      clearDemoHold();
       if (backend.mode === "demo") {
         if (!backend.credentials) throw new Error("مخزن الهوية المحلي غير متاح.");
-        setProfile(await demoSignIn(backend.db, backend.credentials, email, password));
+        setAccount(await demoSignIn(backend.db, backend.credentials, email, password));
         return;
       }
       const { data, error: authError } = await backend.supabase!.auth.signInWithPassword({ email, password });
       if (authError || !data.user) throw new Error(authError?.message ?? "تعذر تسجيل الدخول.");
       const nextProfile = await backend.db.get("profiles", data.user.id);
       if (!nextProfile) throw new Error("لا يوجد ملف صلاحيات لهذا الحساب. أكمل تهيئة المدير أولًا.");
-      setProfile(nextProfile);
+      setAccount(nextProfile);
     },
     async signOut() {
       if (backend?.mode === "supabase") await backend.supabase?.auth.signOut();
+      if (backend?.mode === "demo") holdDemoEntry();
       clearDemoSession();
-      setProfile(null);
+      setAccount(null);
+      setViewRoleState(null);
     },
     async bootstrap(input) {
       if (!backend) throw new Error("المنصة غير جاهزة.");
       if (backend.mode === "demo") {
         if (!backend.credentials) throw new Error("مخزن الهوية المحلي غير متاح.");
-        setProfile(await bootstrapDemoAdmin(backend.db, backend.credentials, input));
+        clearDemoHold();
+        setAccount(await bootstrapDemoAdmin(backend.db, backend.credentials, input));
         return;
       }
       assertPasswordPolicy(input.password);
@@ -102,7 +127,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       if (rpcError) throw new Error(rpcError.message);
       const nextProfile = await backend.db.get("profiles", data.user!.id);
       if (!nextProfile) throw new Error("لم يُنشأ ملف المدير.");
-      setProfile(nextProfile);
+      setAccount(nextProfile);
     },
     async adminExists() {
       if (!backend) return false;
@@ -133,11 +158,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       }
       if (id === profile.id) {
         const next = await backend.db.get("profiles", id);
-        if (next) setProfile(next);
+        if (next) setAccount(next);
       }
       await queryClient.invalidateQueries();
     },
-  }), [backend, profile, queryClient, ready, error]);
+  };
+  }, [account, backend, queryClient, ready, error, viewRole]);
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

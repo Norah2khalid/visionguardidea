@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,12 +7,13 @@ import { z } from "zod";
 import { useSession } from "@/app/session";
 import { Button, EmptyState, ErrorState, Field, InspectionBadge, Loading, Modal, PageHeader, Panel, SeverityBadge } from "@/components/ui";
 import { formatDateTime, formatPercent } from "@/lib/format";
-import { alertCategoryLabel, decisionLabel, methodLabel, responseLabel, riskLabel, roleLabel } from "@/lib/labels";
+import { alertCategoryLabel, decisionLabel, equipmentTypeLabel, methodLabel, pointCategoryLabel, responseLabel, riskLabel, roleLabel, severityLabel } from "@/lib/labels";
+import { reportQueueLabel, reportQueueStatus, taskViewLabel, taskViewStatus, type ReportQueueStatus } from "@/lib/taskStatus";
 import { can } from "@/lib/permissions";
 import { integrationCatalog, probeDeviceGateway } from "@/services/integrations/providers";
 import { getAnalysisProvider } from "@/services/analysis/analysisService";
-import { loadAnalytics, loadCatalog } from "@/services/platform/queries";
-import type { Alert, DecisionAction, RoleCode } from "@/types/domain";
+import { loadCatalog } from "@/services/platform/queries";
+import type { Alert, RoleCode } from "@/types/domain";
 
 export function DroneListPage() { return <DeviceList kind="drone" title="الدرون" />; }
 export function RobotListPage() { return <DeviceList kind="robot" title="الروبوتات" />; }
@@ -141,31 +142,82 @@ export function AlertsPage() {
 
 export function HistoryPage() {
   const { backend } = useSession();
+  const [params, setParams] = useSearchParams();
   const query = useQuery({ queryKey: ["catalog"], enabled: Boolean(backend), queryFn: () => loadCatalog(backend!.db) });
-  const analytics = useQuery({ queryKey: ["analytics"], enabled: Boolean(backend), queryFn: () => loadAnalytics(backend!.db) });
   const [search, setSearch] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [risk, setRisk] = useState("");
+  const [status, setStatus] = useState(params.get("status") ?? "");
   const [open, setOpen] = useState<string | null>(null);
-  if (!query.data || !analytics.data) return <Loading />;
-  const rows = query.data.inspections.filter((item) => `${item.code} ${item.inspection_type}`.toLowerCase().includes(search.toLowerCase()));
+  if (!query.data) return <Loading />;
+  const equipmentFilter = params.get("equipment") ?? "";
+  const rows = query.data.inspections.filter((item) => {
+    const equipment = query.data.equipment.find((row) => row.id === item.equipment_id);
+    const facility = query.data.facilities.find((row) => row.id === item.facility_id);
+    const inspector = query.data.profiles.find((row) => row.id === item.assigned_inspector_id);
+    const haystack = `${item.code} ${facility?.name ?? ""} ${equipment?.name ?? ""} ${equipment?.code ?? ""} ${inspector?.full_name ?? ""}`.toLowerCase();
+    if (search && !haystack.includes(search.trim().toLowerCase())) return false;
+    if (equipmentFilter && item.equipment_id !== equipmentFilter) return false;
+    if (risk && item.risk_level !== risk) return false;
+    if (status === "completed" && item.status !== "COMPLETED" && item.status !== "CLOSED") return false;
+    if (status && status !== "completed" && taskViewStatus(item) !== status) return false;
+    const stamp = Date.parse(item.completed_at ?? item.planned_at ?? item.created_at);
+    if (from && stamp < Date.parse(from)) return false;
+    if (to && stamp > Date.parse(to) + 86_400_000) return false;
+    return true;
+  }).sort((a, b) => (b.completed_at ?? b.created_at).localeCompare(a.completed_at ?? a.created_at));
   return (
     <>
-      <PageHeader title="سجل التفتيش" subtitle="السجل يُقرأ من قاعدة البيانات المحلية أو Supabase." />
-      <input className="input" placeholder="بحث" value={search} onChange={(event) => setSearch(event.target.value)} />
-      {rows.length === 0 ? <EmptyState title="لا توجد سجلات" /> : rows.map((inspection) => {
+      <PageHeader title="سجل التفتيش" subtitle="السجلات المكتملة تبقى محفوظة. تعديل مهمة جديدة لا يستبدل تفتيشًا سابقًا." />
+      <div className="filters">
+        <input className="input" placeholder="رقم، منشأة، معدة، أو مفتش" value={search} onChange={(event) => setSearch(event.target.value)} />
+        <input className="input" type="date" value={from} onChange={(event) => setFrom(event.target.value)} />
+        <input className="input" type="date" value={to} onChange={(event) => setTo(event.target.value)} />
+        <select className="select" value={risk} onChange={(event) => setRisk(event.target.value)}><option value="">كل الخطورة</option><option value="normal">عادي</option><option value="medium">متوسط</option><option value="high">عالٍ</option></select>
+        <select className="select" value={status} onChange={(event) => { setStatus(event.target.value); const copy = new URLSearchParams(params); if (event.target.value) copy.set("status", event.target.value); else copy.delete("status"); setParams(copy); }}>
+          <option value="">كل الحالات</option>
+          <option value="completed">مكتملة</option>
+          <option value="review">بانتظار المراجعة</option>
+          <option value="overdue">متأخرة</option>
+          <option value="cancelled">ملغاة</option>
+        </select>
+      </div>
+      {rows.length === 0 ? <EmptyState title="لا توجد سجلات مطابقة" /> : rows.map((inspection) => {
         const equipment = query.data.equipment.find((item) => item.id === inspection.equipment_id);
+        const facility = query.data.facilities.find((item) => item.id === inspection.facility_id);
+        const zone = query.data.inspection_zones.find((item) => item.id === inspection.zone_id);
+        const inspector = query.data.profiles.find((item) => item.id === inspection.assigned_inspector_id);
         const points = query.data.inspection_points.filter((item) => item.inspection_id === inspection.id);
         const decisions = query.data.inspection_decisions.filter((item) => item.inspection_id === inspection.id);
         const reports = query.data.inspection_reports.filter((item) => item.inspection_id === inspection.id);
+        const media = query.data.inspection_media.filter((item) => item.inspection_id === inspection.id);
+        const checklist = query.data.inspection_checklists.find((item) => item.inspection_id === inspection.id);
+        const items = checklist ? query.data.inspection_checklist_items.filter((item) => item.checklist_id === checklist.id) : [];
+        const observations = query.data.inspection_observations.filter((item) => item.inspection_id === inspection.id);
+        const sameEquipment = query.data.inspections.filter((item) => item.equipment_id && item.equipment_id === inspection.equipment_id && item.id !== inspection.id);
+        const audits = query.data.audit_logs.filter((item) => item.target_id === inspection.id);
         return (
-          <Panel key={inspection.id} title={`${inspection.code}${equipment ? ` — ${equipment.name}` : ""}`} action={<InspectionBadge status={inspection.status} />}>
-            <Button variant="ghost" onClick={() => setOpen(open === inspection.id ? null : inspection.id)}>{open === inspection.id ? "إخفاء" : "عرض التفاصيل"}</Button>
+          <Panel key={inspection.id} title={inspection.code} action={<InspectionBadge status={inspection.status} />}>
+            <p>{formatDateTime(inspection.completed_at ?? inspection.planned_at)} — {facility?.name} / {zone?.name} — {equipment ? `${equipment.name} (${equipmentTypeLabel[equipment.equipment_type]})` : "بدون معدة"}</p>
+            <p>المفتش: {inspector?.full_name ?? "غير مسجل"} — النتيجة: {taskViewLabel[taskViewStatus(inspection)]} — الخطورة: {riskLabel[inspection.risk_level]} — المؤشرات: {points.length}</p>
+            <p>التقرير: {reports.map((item) => item.code).join("، ") || "لا يوجد"} — المراجعة: {decisions.at(-1) ? decisionLabel[decisions.at(-1)!.action] : "لا يوجد قرار"}</p>
+            <Button variant="ghost" onClick={() => setOpen(open === inspection.id ? null : inspection.id)}>{open === inspection.id ? "إخفاء التفاصيل" : "التفاصيل الكاملة"}</Button>
             {open === inspection.id ? (
               <div className="grid">
-                <div>الأسلوب: {methodLabel[inspection.method]} — الخطورة: {riskLabel[inspection.risk_level]}</div>
-                <div>النقاط: {points.map((point) => point.description).join(" | ") || "لا توجد"}</div>
-                <div>القرارات: {decisions.map((item) => decisionLabel[item.action as DecisionAction]).join("، ") || "لا توجد"}</div>
-                <div>التقارير: {reports.map((item) => item.code).join("، ") || "لا يوجد"}</div>
-                <Link to={`/inspections/${inspection.id}`}>فتح السجل الكامل</Link>
+                <div>قائمة الفحص: {items.map((item) => `${item.label} (${item.response ? responseLabel[item.response] : "—"})`).join(" | ") || "لا توجد"}</div>
+                <div>ملاحظات المفتش: {observations.map((item) => item.description).join(" | ") || "لا توجد"}</div>
+                <div>مؤشرات غير بشرية: {points.filter((point) => point.source !== "inspector").map((point) => `${point.code} ${pointCategoryLabel[point.category]} / ${point.review_status}`).join(" | ") || "لا توجد"}</div>
+                <div>المرفقات: {media.map((item) => item.file_name).join("، ") || "لا توجد"}</div>
+                <div>مقارنة المعدة: {sameEquipment.length === 0 ? "لا يوجد تفتيش سابق آخر لهذه المعدة." : sameEquipment.map((item) => `${item.code} (${formatDateTime(item.completed_at ?? item.planned_at)})`).join(" — ")}</div>
+                <div>النشاط: {audits.map((item) => `${formatDateTime(item.created_at)} ${item.action}`).join(" | ") || "لا يوجد"}</div>
+                <div className="actions">
+                  <Link to={`/inspections/${inspection.id}`}>التفتيش</Link>
+                  <Link to={`/work?tab=tasks&equipment=${inspection.equipment_id ?? ""}`}>المهام</Link>
+                  <Link to={`/work?tab=locations`}>الموقع</Link>
+                  {reports[0] ? <Link to={`/reports/${reports[0].id}`}>التقرير</Link> : null}
+                  {equipment ? <Link to={`/equipment/${equipment.id}`}>المعدة</Link> : null}
+                </div>
               </div>
             ) : null}
           </Panel>
@@ -177,34 +229,128 @@ export function HistoryPage() {
 
 export function ReportListPage() {
   const { backend } = useSession();
+  const [params] = useSearchParams();
   const query = useQuery({ queryKey: ["catalog"], enabled: Boolean(backend), queryFn: () => loadCatalog(backend!.db) });
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [facility, setFacility] = useState("");
+  const [severity, setSeverity] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [sort, setSort] = useState<"date" | "code">("date");
   if (!query.data) return <Loading />;
+  const equipmentFilter = params.get("equipment") ?? "";
+  const rows = query.data.inspections.flatMap((inspection) => {
+    const queue = reportQueueStatus(inspection, query.data.inspection_reports);
+    if (!queue) return [];
+    const reports = query.data.inspection_reports.filter((item) => item.inspection_id === inspection.id);
+    const latest = reports.slice().sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+    const facilityRow = query.data.facilities.find((item) => item.id === inspection.facility_id);
+    const zone = query.data.inspection_zones.find((item) => item.id === inspection.zone_id);
+    const equipment = query.data.equipment.find((item) => item.id === inspection.equipment_id);
+    const inspector = query.data.profiles.find((item) => item.id === inspection.assigned_inspector_id);
+    const points = query.data.inspection_points.filter((item) => item.inspection_id === inspection.id);
+    const highest = points.reduce<string>((current, point) => rank(point.severity) > rank(current) ? point.severity : current, "low");
+    return [{
+      inspection,
+      queue,
+      latest,
+      facilityRow,
+      zone,
+      equipment,
+      inspector,
+      severity: points.length ? highest : inspection.risk_level === "high" ? "high" : inspection.risk_level === "medium" ? "medium" : "low",
+      date: latest?.created_at ?? inspection.completed_at ?? inspection.planned_at ?? inspection.created_at,
+    }];
+  }).filter((row) => {
+    if (equipmentFilter && row.inspection.equipment_id !== equipmentFilter) return false;
+    if (facility && row.inspection.facility_id !== facility) return false;
+    if (status && row.queue !== status) return false;
+    if (severity && row.severity !== severity) return false;
+    const stamp = Date.parse(row.date);
+    if (from && stamp < Date.parse(from)) return false;
+    if (to && stamp > Date.parse(to) + 86_400_000) return false;
+    const haystack = `${row.latest?.code ?? row.inspection.code} ${row.inspection.inspection_type} ${row.facilityRow?.name ?? ""} ${row.zone?.name ?? ""} ${row.inspector?.full_name ?? ""}`.toLowerCase();
+    return !search || haystack.includes(search.trim().toLowerCase());
+  }).sort((a, b) => sort === "code" ? (a.latest?.code ?? a.inspection.code).localeCompare(b.latest?.code ?? b.inspection.code) : b.date.localeCompare(a.date));
+  const counts = {
+    total: query.data.inspections.filter((item) => reportQueueStatus(item, query.data.inspection_reports)).length,
+    fresh: query.data.inspections.filter((item) => reportQueueStatus(item, query.data.inspection_reports) === "new").length,
+    review: query.data.inspections.filter((item) => reportQueueStatus(item, query.data.inspection_reports) === "in_review").length,
+    complete: query.data.inspections.filter((item) => reportQueueStatus(item, query.data.inspection_reports) === "complete").length,
+    missing: query.data.inspections.filter((item) => reportQueueStatus(item, query.data.inspection_reports) === "needs_completion").length,
+  };
   return (
     <>
-      <PageHeader title="التقارير" subtitle="التقارير النهائية لا تُستبدل. كل إصدار مراجعة جديدة." />
+      <PageHeader title="التقارير" subtitle="كل تقرير يشير إلى تفتيشه. إصدار جديد لا يحذف المراجعة السابقة." />
+      <div className="grid cols-5">
+        <Panel><div className="kpi"><div className="muted">إجمالي التقارير</div><div className="value">{counts.total}</div></div></Panel>
+        <Panel><div className="kpi"><div className="muted">التقارير الجديدة</div><div className="value">{counts.fresh}</div></div></Panel>
+        <Panel><div className="kpi"><div className="muted">قيد المراجعة</div><div className="value">{counts.review}</div></div></Panel>
+        <Panel><div className="kpi"><div className="muted">المكتملة</div><div className="value">{counts.complete}</div></div></Panel>
+        <Panel><div className="kpi"><div className="muted">تحتاج استكمالًا</div><div className="value">{counts.missing}</div></div></Panel>
+      </div>
+      <div className="filters">
+        <input className="input" placeholder="بحث" value={search} onChange={(event) => setSearch(event.target.value)} />
+        <select className="select" value={status} onChange={(event) => setStatus(event.target.value)}><option value="">كل الحالات</option>{(Object.keys(reportQueueLabel) as ReportQueueStatus[]).map((item) => <option key={item} value={item}>{reportQueueLabel[item]}</option>)}</select>
+        <select className="select" value={facility} onChange={(event) => setFacility(event.target.value)}><option value="">كل المنشآت</option>{query.data.facilities.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
+        <select className="select" value={severity} onChange={(event) => setSeverity(event.target.value)}><option value="">كل الشدة</option>{(["low", "medium", "high", "critical"] as const).map((item) => <option key={item} value={item}>{severityLabel[item]}</option>)}</select>
+        <input className="input" type="date" value={from} onChange={(event) => setFrom(event.target.value)} />
+        <input className="input" type="date" value={to} onChange={(event) => setTo(event.target.value)} />
+        <select className="select" value={sort} onChange={(event) => setSort(event.target.value as typeof sort)}><option value="date">الأحدث</option><option value="code">الرقم</option></select>
+      </div>
       <Panel>
-        {query.data.inspection_reports.length === 0 ? <EmptyState title="لا توجد تقارير" /> : query.data.inspection_reports.map((report) => (
-          <Link key={report.id} to={`/reports/${report.id}`} style={{ display: "block", padding: "8px 0" }}>{report.code} — مراجعة {report.revision} — {formatDateTime(report.created_at)}</Link>
-        ))}
+        {rows.length === 0 ? <EmptyState title="لا توجد تقارير مطابقة" /> : (
+          <div className="table-wrap"><table>
+            <thead><tr><th>الرقم</th><th>العنوان</th><th>المنشأة</th><th>الموقع</th><th>المفتش</th><th>التاريخ</th><th>الشدة</th><th>الحالة</th><th>إجراء</th></tr></thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.inspection.id}>
+                  <td className="mono">{row.latest?.code ?? row.inspection.code}</td>
+                  <td>{row.inspection.inspection_type}</td>
+                  <td>{row.facilityRow?.name}</td>
+                  <td>{row.zone?.name} {row.equipment ? `— ${row.equipment.code}` : ""}</td>
+                  <td>{row.inspector?.full_name ?? "—"}</td>
+                  <td>{formatDateTime(row.date)}</td>
+                  <td>{severityLabel[row.severity as keyof typeof severityLabel]}</td>
+                  <td>{reportQueueLabel[row.queue]}</td>
+                  <td>{row.latest ? <Link to={`/reports/${row.latest.id}`}>عرض</Link> : <Link to={`/inspections/${row.inspection.id}`}>استكمال</Link>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table></div>
+        )}
       </Panel>
     </>
   );
 }
 
+function rank(value: string): number {
+  return value === "critical" ? 4 : value === "high" ? 3 : value === "medium" ? 2 : 1;
+}
+
 export function ReportViewPage() {
   const { id = "" } = useParams();
-  const { backend } = useSession();
+  const { backend, actor, profile } = useSession();
+  const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ["catalog"], enabled: Boolean(backend), queryFn: () => loadCatalog(backend!.db) });
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   if (!query.data) return <Loading />;
   const report = query.data.inspection_reports.find((item) => item.id === id);
   if (!report) return <EmptyState title="التقرير غير موجود" />;
   const snapshot = report.snapshot;
+  const inspection = query.data.inspections.find((item) => item.id === report.inspection_id);
+  const media = query.data.inspection_media.filter((item) => item.inspection_id === report.inspection_id);
   return (
     <>
       <div className="actions no-print">
-        <Button variant="primary" onClick={() => window.print()}>تصدير PDF / طباعة</Button>
+        <Button variant="primary" onClick={() => window.print()}>طباعة أو حفظ PDF</Button>
         <Button onClick={() => downloadHtml(snapshot)}>تنزيل HTML</Button>
+        {can(profile?.role_code, "reports.generate") && actor && inspection && !inspection.archived_at ? <Button onClick={() => void backend!.platform.archiveInspection(actor, inspection.id).then(async () => { setNotice("أُرشف السجل وبقي التقرير محفوظًا."); await queryClient.invalidateQueries(); }).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "تعذر الأرشفة"))}>أرشفة</Button> : null}
       </div>
+      {notice ? <p className="banner no-print">{notice}</p> : null}
+      {error ? <ErrorState message={error} /> : null}
       <article className="report-sheet">
         <div dir="ltr" style={{ fontWeight: 700, letterSpacing: "0.08em" }}><span style={{ color: "#0f8f86" }}>VISION</span><span style={{ color: "#22D3EE" }}>GUARD</span></div>
         <h1>تقرير فحص</h1>
@@ -228,9 +374,15 @@ export function ReportViewPage() {
           <thead><tr><th>البند</th><th>الاستجابة</th><th>ملاحظة</th></tr></thead>
           <tbody>{snapshot.checklist_items.map((item) => <tr key={item.label}><td>{item.label}</td><td>{item.response ? responseLabel[item.response] : "—"}</td><td>{item.notes ?? ""}</td></tr>)}</tbody>
         </table>
-        <h2>الملاحظات والقرارات</h2>
-        {snapshot.points.map((point) => <p key={point.code}>{point.code}: {point.description}</p>)}
+        <h2>ملاحظات بشرية</h2>
+        {snapshot.observations.length === 0 ? <p>لا توجد ملاحظات بشرية في هذه النسخة.</p> : snapshot.observations.map((item) => <p key={item.description}>{item.description} — {item.source === "inspector" ? "مفتش" : item.source}</p>)}
+        <h2>مؤشرات مساعدة — ليست قرار سلامة</h2>
+        {snapshot.points.map((point) => <p key={point.code}>{point.code}: {point.description} — المراجعة: {point.review_status}</p>)}
+        <h2>الصور</h2>
+        {media.length === 0 ? <p>لا توجد صور مرتبطة.</p> : media.map((item) => <p key={item.id}>{item.file_name} — {formatDateTime(item.captured_at)} — {item.source === "seed" ? "دليل تجريبي" : item.source}</p>)}
+        <h2>قرارات المراجعة البشرية</h2>
         {snapshot.decisions.map((item) => <p key={item.decided_at}>{decisionLabel[item.action]} — {item.notes}</p>)}
+        <p>حالة الاعتماد: {inspection?.archived_at ? `مؤرشف ${formatDateTime(inspection.archived_at)}` : report.status === "final" ? "نسخة نهائية غير مؤرشفة" : report.status}</p>
         <h2>القراءات</h2>
         {snapshot.sensors.map((item) => <p key={item.recorded_at + item.measurement_type}>{item.measurement_type}: {item.numeric_value} {item.unit} — {item.interpretation}</p>)}
         <h2>التوصيات</h2>
@@ -243,8 +395,10 @@ export function ReportViewPage() {
   );
 }
 
-function downloadHtml(snapshot: { report_code: string; disclaimer: string; inspection_code: string; facility_name: string }) {
-  const html = `<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>${snapshot.report_code}</title><body><h1>VISIONGUARD</h1><p>${snapshot.disclaimer}</p><p>${snapshot.inspection_code} — ${snapshot.facility_name}</p></body></html>`;
+function downloadHtml(snapshot: ReportViewSnapshot) {
+  const rows = snapshot.checklist_items.map((item) => `<tr><td>${escapeHtml(item.label)}</td><td>${escapeHtml(item.response ?? "—")}</td><td>${escapeHtml(item.notes ?? "")}</td></tr>`).join("");
+  const points = snapshot.points.map((point) => `<li>${escapeHtml(point.code)}: ${escapeHtml(point.description)} — ${escapeHtml(point.review_status)}</li>`).join("");
+  const html = `<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>${escapeHtml(snapshot.report_code)}</title><body style="font-family:sans-serif"><h1>VISIONGUARD</h1><p>${escapeHtml(snapshot.disclaimer)}</p><p>التقرير ${escapeHtml(snapshot.report_code)} — التفتيش ${escapeHtml(snapshot.inspection_code)}</p><p>${escapeHtml(snapshot.facility_name)} / ${escapeHtml(snapshot.zone_name)} / ${escapeHtml(snapshot.equipment_label ?? "—")}</p><table border="1" cellpadding="6">${rows}</table><h2>مؤشرات مساعدة</h2><ul>${points}</ul></body></html>`;
   const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
   const link = document.createElement("a");
   link.href = url;
@@ -252,6 +406,21 @@ function downloadHtml(snapshot: { report_code: string; disclaimer: string; inspe
   link.click();
   URL.revokeObjectURL(url);
 }
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[char] ?? char));
+}
+
+type ReportViewSnapshot = {
+  report_code: string;
+  disclaimer: string;
+  inspection_code: string;
+  facility_name: string;
+  zone_name: string;
+  equipment_label: string | null;
+  checklist_items: { label: string; response: string | null; notes: string | null }[];
+  points: { code: string; description: string; review_status: string }[];
+};
 
 const userSchema = z.object({
   fullName: z.string().min(3),
