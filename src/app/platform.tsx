@@ -1,4 +1,4 @@
-import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { personaForRole } from "@/lib/derive";
 import { emptyState, loadState, saveState, stateWith } from "@/services/platform/repository";
 import type { ActorContext, AppData, DemoRole, MutationResult, PersistedState, User } from "@/types/domain";
@@ -24,11 +24,18 @@ export const PlatformContext = createContext<PlatformValue | null>(null);
 
 export function PlatformProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<PersistedState | null>(null);
+  const stateRef = useRef<PersistedState | null>(null);
   const [recovered, setRecovered] = useState(false);
   const [toast, setToast] = useState<{ message: string; error: boolean } | null>(null);
 
+  const commit = useCallback((next: PersistedState) => {
+    stateRef.current = next;
+    setState(next);
+  }, []);
+
   useEffect(() => {
     const loaded = loadState();
+    stateRef.current = loaded.state;
     setState(loaded.state);
     setRecovered(loaded.recovered);
     if (loaded.recovered) setToast({ message: "استُعيدت بيانات المحاكاة بعد تعذر قراءة النسخة المحلية.", error: true });
@@ -57,31 +64,37 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       data: state.data,
       readIds: state.read_notification_ids,
       toast,
-      setRole: (role) => setState((current) => (current ? { ...current, role } : current)),
+      setRole: (role) => {
+        const current = stateRef.current;
+        if (current) commit({ ...current, role });
+      },
       resetDemo: () => {
-        setState(emptyState());
+        commit(emptyState());
         setToast({ message: "أُعيد ضبط بيانات المحاكاة.", error: false });
       },
       run: (fn) => {
-        const result = fn(state.data, { actor: user });
-        if (result.ok) setState((current) => (current ? stateWith(result.data, current.role, current.read_notification_ids) : current));
+        const current = stateRef.current;
+        if (!current) return false;
+        const actor = personaForRole(current.data, current.role);
+        const result = fn(current.data, { actor });
+        if (result.ok) commit(stateWith(result.data, current.role, current.read_notification_ids));
         setToast({ message: result.message, error: !result.ok });
         return result.ok;
       },
       notify,
       dismissToast: () => setToast(null),
-      markNotification: (id) =>
-        setState((current) =>
-          current && !current.read_notification_ids.includes(id)
-            ? { ...current, read_notification_ids: [...current.read_notification_ids, id] }
-            : current,
-        ),
-      markAllNotifications: (ids) =>
-        setState((current) =>
-          current ? { ...current, read_notification_ids: [...new Set([...current.read_notification_ids, ...ids])] } : current,
-        ),
+      markNotification: (id) => {
+        const current = stateRef.current;
+        if (!current || current.read_notification_ids.includes(id)) return;
+        commit({ ...current, read_notification_ids: [...current.read_notification_ids, id] });
+      },
+      markAllNotifications: (ids) => {
+        const current = stateRef.current;
+        if (!current) return;
+        commit({ ...current, read_notification_ids: [...new Set([...current.read_notification_ids, ...ids])] });
+      },
     };
-  }, [notify, recovered, state, toast]);
+  }, [commit, notify, recovered, state, toast]);
 
   if (!value) {
     return (

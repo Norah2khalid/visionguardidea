@@ -41,7 +41,8 @@ export function createTask(data: AppData, input: TaskInput, ctx: ActorContext): 
   if (!can(ctx.actor.role_code, "task.create")) return fail(data, "إنشاء المهام متاح للمدير.");
   const title = input.title.trim();
   if (title.length < 4) return fail(data, "أدخل عنوانًا واضحًا للمهمة.");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.due_date)) return fail(data, "تاريخ الاستحقاق غير صالح.");
+  const dueDate = normalizeDueDate(input.due_date);
+  if (!dueDate) return fail(data, "تاريخ الاستحقاق غير صالح. استخدم الصيغة 2026-10-20.");
   const location = data.inspection_locations.find((item) => item.id === input.location_id && item.facility_id === input.facility_id);
   if (!location) return fail(data, "موقع التفتيش لا يتبع المنشأة المحددة.");
   if (input.inspector_id && !data.users.some((user) => user.id === input.inspector_id && user.role_code === "inspector")) {
@@ -58,7 +59,7 @@ export function createTask(data: AppData, input: TaskInput, ctx: ActorContext): 
     equipment_id: location.equipment_id,
     inspector_id: input.inspector_id,
     priority: input.priority,
-    due_date: input.due_date,
+    due_date: dueDate,
     status: input.inspector_id ? "scheduled" : "new",
     workflow_stage: input.inspector_id ? "assigned" : "created",
     created_at: now,
@@ -76,6 +77,8 @@ export function updateTask(data: AppData, taskId: string, input: TaskInput, ctx:
   if (current.status === "completed" || current.status === "cancelled") return fail(data, "لا يمكن تعديل مهمة مكتملة أو ملغاة.");
   const title = input.title.trim();
   if (title.length < 4) return fail(data, "أدخل عنوانًا واضحًا للمهمة.");
+  const dueDate = normalizeDueDate(input.due_date);
+  if (!dueDate) return fail(data, "تاريخ الاستحقاق غير صالح. استخدم الصيغة 2026-10-20.");
   const location = data.inspection_locations.find((item) => item.id === input.location_id && item.facility_id === input.facility_id);
   if (!location) return fail(data, "موقع التفتيش لا يتبع المنشأة المحددة.");
   if (input.inspector_id && !data.users.some((user) => user.id === input.inspector_id && user.role_code === "inspector")) {
@@ -90,7 +93,7 @@ export function updateTask(data: AppData, taskId: string, input: TaskInput, ctx:
   task.equipment_id = location.equipment_id;
   task.inspector_id = input.inspector_id;
   task.priority = input.priority;
-  task.due_date = input.due_date;
+  task.due_date = dueDate;
   task.updated_at = now;
   if (task.status === "new" && input.inspector_id) {
     task.status = "scheduled";
@@ -636,6 +639,22 @@ function addDays(iso: string, days: number): string {
   const date = new Date(iso);
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
+}
+
+export function normalizeDueDate(value: string): string | null {
+  const trimmed = value.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return validIso(trimmed);
+  const match = trimmed.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
+  if (!match) return null;
+  const iso = `${match[3]}-${match[2].padStart(2, "0")}-${match[1].padStart(2, "0")}`;
+  return validIso(iso);
+}
+
+function validIso(iso: string): string | null {
+  const [year, month, day] = iso.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return null;
+  return iso;
 }
 
 function stamp(ctx: ActorContext): string {

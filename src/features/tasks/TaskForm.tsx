@@ -47,7 +47,10 @@ export function TaskForm({ task, presetLocationId, onClose }: { task?: Inspectio
           {(Object.keys(priorityLabel) as Priority[]).map((item) => <option key={item} value={item}>{priorityLabel[item]}</option>)}
         </select>
       </Field>
-      <Field label="تاريخ الاستحقاق"><input className={`${controlClass} mono`} type="date" value={due} onChange={(event) => setDue(event.target.value)} required /></Field>
+      <Field label="تاريخ الاستحقاق">
+        <input className={`${controlClass} mono`} dir="ltr" inputMode="numeric" placeholder="2026-10-20" value={due} onChange={(event) => setDue(event.target.value)} required />
+      </Field>
+      <p className="text-xs text-muted">اكتب التاريخ بالشكل سنة-شهر-يوم، مثل 2026-10-20.</p>
       <div className="flex gap-2">
         <Button type="submit" variant="primary">{task ? "حفظ التعديل" : "إنشاء المهمة"}</Button>
         <Button type="button" variant="ghost" onClick={onClose}>إلغاء</Button>

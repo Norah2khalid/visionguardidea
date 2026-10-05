@@ -13,6 +13,7 @@ import {
   confirmMedia,
   createTask,
   generateReport,
+  normalizeDueDate,
   reviewFinding,
   startInspection,
   submitInspection,
@@ -152,5 +153,11 @@ describe("inspection workflow", () => {
     expect(revisions[0]?.snapshot.report_code).not.toBe(revisions[1]?.snapshot.report_code);
     const denied = cancelTask(again.data, task.id, ctx(manager, "2026-10-05T10:40:00.000Z"));
     expect(denied.ok).toBe(false);
+  });
+
+  it("accepts ISO and day-first due dates", () => {
+    expect(normalizeDueDate("2026-10-20")).toBe("2026-10-20");
+    expect(normalizeDueDate("20/10/2026")).toBe("2026-10-20");
+    expect(normalizeDueDate("31/02/2026")).toBeNull();
   });
 });
