@@ -1,144 +1,164 @@
 import type {
-  AlertCategory,
-  ChecklistResponse,
-  DecisionAction,
+  ActionStatus,
+  CheckResult,
+  DataSource,
+  DemoRole,
   DeviceStatus,
-  InspectionMethod,
-  InspectionStatus,
-  MissionStatus,
-  PointCategory,
+  DeviceType,
+  EquipmentType,
+  FindingCategory,
+  FindingStatus,
+  InspectionResult,
+  MarkerState,
+  Priority,
+  ReportStatus,
+  ReviewDecision,
   RiskLevel,
-  RoleCode,
   Severity,
+  TaskStatus,
+  WorkflowStage,
 } from "@/types/domain";
 
-export const inspectionStatusLabel: Record<InspectionStatus, string> = {
-  DRAFT: "مسودة",
-  SCHEDULED: "مجدول",
-  READY: "جاهز",
-  IN_PROGRESS: "قيد التنفيذ",
-  REVIEW_REQUIRED: "بانتظار المراجعة",
-  COMPLETED: "مكتمل",
-  FOLLOW_UP_REQUIRED: "يتطلب متابعة",
-  CLOSED: "مغلق",
-  CANCELLED: "ملغى",
+export const roleLabel: Record<DemoRole, string> = {
+  manager: "المدير",
+  inspector: "المفتش",
+  report_collector: "جامع التقارير",
 };
 
-export const missionStatusLabel: Record<MissionStatus, string> = {
-  CREATED: "أُنشئت",
-  ASSIGNED: "مُسندة",
-  READY: "جاهزة",
-  DISPATCHED: "أُرسل الجهاز",
-  INSPECTING: "جارٍ المسح",
-  DATA_TRANSMISSION: "إرسال البيانات",
-  REVIEW_REQUIRED: "بانتظار المراجعة",
-  INSPECTOR_REVIEW: "مراجعة المفتش",
-  COMPLETED: "مكتملة",
-  CANCELLED: "ملغاة",
-  INTERRUPTED: "متوقفة",
-  FAILED: "فشلت",
+export const taskStatusLabel: Record<TaskStatus, string> = {
+  new: "جديدة",
+  scheduled: "مجدولة",
+  in_progress: "قيد التنفيذ",
+  pending_review: "بانتظار المراجعة",
+  completed: "مكتملة",
+  cancelled: "ملغاة",
 };
 
-export const methodLabel: Record<InspectionMethod, string> = {
-  human: "مفتش بشري",
-  drone: "درون",
-  robot: "روبوت",
-  drone_human: "درون مع مراجعة بشرية",
-  robot_human: "روبوت مع مراجعة بشرية",
+export const priorityLabel: Record<Priority, string> = {
+  low: "منخفضة",
+  medium: "متوسطة",
+  high: "عالية",
+  critical: "حرجة",
 };
 
 export const riskLabel: Record<RiskLevel, string> = {
-  normal: "عادي",
+  low: "منخفض",
   medium: "متوسط",
   high: "مرتفع",
+  critical: "حرج",
+};
+
+export const severityLabel: Record<Severity, string> = riskLabel;
+
+export const markerLabel: Record<MarkerState, string> = {
+  NORMAL: "طبيعي",
+  WARNING: "تحذير",
+  CRITICAL: "حرج",
+  INSPECTED: "تم التفتيش",
+};
+
+export const equipmentTypeLabel: Record<EquipmentType, string> = {
+  tank: "خزانات",
+  pipeline: "أنابيب",
+  valve: "صمامات",
+  pump: "مضخات",
+  tower: "أبراج",
+  industrial: "معدات صناعية",
+};
+
+export const checkResultLabel: Record<CheckResult, string> = {
+  pass: "مطابق",
+  warning: "تحذير",
+  fail: "غير مطابق",
+  not_applicable: "لا ينطبق",
+};
+
+export const workflowLabel: Record<WorkflowStage, string> = {
+  created: "إنشاء المهمة",
+  assigned: "تعيين المهمة",
+  started: "بدء التفتيش",
+  checklist: "إكمال قائمة الفحص",
+  media: "جمع الصور والبيانات",
+  ai: "تحليل الذكاء الاصطناعي",
+  review: "المراجعة البشرية",
+  completed: "اكتمال التفتيش",
+  reported: "إصدار التقرير",
+  recorded: "حفظ السجل",
+};
+
+export const findingCategoryLabel: Record<FindingCategory, string> = {
+  possible_leak: "تسرب محتمل",
+  corrosion: "تآكل",
+  abnormal_heat: "ارتفاع غير طبيعي في الحرارة",
+  equipment_fault: "خلل في المعدات",
+  visual_change: "تغير بصري غير طبيعي",
+  needs_followup: "مؤشرات تحتاج إلى فحص إضافي",
+};
+
+export const findingStatusLabel: Record<FindingStatus, string> = {
+  open: "مفتوحة",
+  approved: "معتمدة",
+  rejected: "مرفوضة",
+  extra_inspection: "فحص إضافي",
+  maintenance: "محالة للصيانة",
+};
+
+export const reviewDecisionLabel: Record<ReviewDecision, string> = {
+  approve: "اعتماد الملاحظة",
+  reject: "رفض الملاحظة",
+  extra_inspection: "طلب فحص إضافي",
+  maintenance: "تحويل للصيانة",
+  note: "إضافة ملاحظة",
+};
+
+export const reportStatusLabel: Record<ReportStatus, string> = {
+  new: "جديدة",
+  in_review: "قيد المراجعة",
+  completed: "مكتملة",
+  needs_completion: "تحتاج استكمال",
+  archived: "مؤرشفة",
+};
+
+export const inspectionResultLabel: Record<InspectionResult, string> = {
+  pass: "سليم",
+  warning: "تحذير",
+  fail: "غير مطابق",
+  pending: "قيد التنفيذ",
+};
+
+export const deviceTypeLabel: Record<DeviceType, string> = {
+  drone: "درون",
+  robot: "روبوت",
+  camera: "كاميرا",
+  temperature_sensor: "حساس حرارة",
+  gas_sensor: "حساس غاز",
+  other_sensor: "حساس آخر",
 };
 
 export const deviceStatusLabel: Record<DeviceStatus, string> = {
-  available: "متاح",
-  reserved: "محجوز",
-  on_mission: "في مهمة",
-  charging: "يشحن",
-  maintenance: "صيانة",
+  online: "متصل",
+  standby: "استعداد",
+  mission: "في مهمة",
   offline: "غير متصل",
   fault: "عطل",
 };
 
-export const responseLabel: Record<ChecklistResponse, string> = {
-  pass: "مطابق",
-  fail: "غير مطابق",
-  needs_review: "يحتاج مراجعة",
-  not_applicable: "لا ينطبق",
+export const sourceLabel: Record<DataSource, string> = {
+  LIVE: "مباشر",
+  IMPORTED: "مستورد",
+  SIMULATION: "محاكاة",
+  UNAVAILABLE: "غير متاح",
 };
 
-export const decisionLabel: Record<DecisionAction, string> = {
-  confirm: "تأكيد الملاحظة",
-  reject: "رفض الملاحظة",
-  follow_up: "طلب متابعة",
-  maintenance: "إحالة للصيانة",
-  reinspect: "طلب تفتيش آخر",
-  close: "إغلاق الملاحظة",
+export const actionStatusLabel: Record<ActionStatus, string> = {
+  open: "مفتوح",
+  in_progress: "قيد المعالجة",
+  done: "مغلق",
 };
 
-export const pointCategoryLabel: Record<PointCategory, string> = {
-  possible_leak: "احتمال تسريب",
-  possible_corrosion: "مؤشر تآكل",
-  visible_damage: "ضرر ظاهر",
-  unusual_reading: "قراءة غير معتادة",
-  equipment_condition: "حالة معدة",
-  manual_observation: "ملاحظة يدوية",
-};
-
-export const alertCategoryLabel: Record<AlertCategory, string> = {
-  high_risk_zone: "منطقة عالية الخطورة",
-  point_review: "نقطة تحتاج فحصًا",
-  threshold_exceeded: "تجاوز حد مستشعر",
-  low_battery: "بطارية منخفضة",
-  device_offline: "جهاز غير متصل",
-  connection_lost: "انقطاع الاتصال",
-  mission_interrupted: "مهمة متوقفة",
-  maintenance_required: "صيانة مطلوبة",
-  inspection_overdue: "تفتيش متأخر",
-  review_pending: "مراجعة معلّقة",
-};
-
-export const severityLabel: Record<Severity, string> = {
-  low: "منخفض",
-  medium: "متوسط",
-  high: "عالٍ",
-  critical: "حرج",
-};
-
-export const roleLabel: Record<RoleCode, string> = {
-  ADMIN: "مدير النظام",
-  INSPECTOR: "مفتش",
-  OPERATOR: "مشغّل",
-};
-
-export const stageLabel: Record<number, string> = {
-  1: "إرسال الدرون",
-  2: "بدء التفتيش",
-  3: "مسح وتصوير الموقع",
-  4: "إرسال البيانات بشكل حي",
-  5: "رصد نقطة تحتاج فحصًا",
-  6: "تقييم واتخاذ القرار",
-};
-
-export function toneForInspection(status: InspectionStatus): "ok" | "warn" | "crit" | "info" | "neutral" {
-  if (status === "COMPLETED" || status === "CLOSED") return "ok";
-  if (status === "CANCELLED") return "neutral";
-  if (status === "FOLLOW_UP_REQUIRED" || status === "REVIEW_REQUIRED") return "warn";
-  if (status === "IN_PROGRESS") return "info";
-  return "neutral";
-}
-
-export function toneForRisk(risk: RiskLevel): "ok" | "warn" | "crit" {
-  if (risk === "high") return "crit";
-  if (risk === "medium") return "warn";
-  return "ok";
-}
-
-export function toneForSeverity(severity: Severity): "ok" | "warn" | "crit" | "info" {
-  if (severity === "critical" || severity === "high") return "crit";
-  if (severity === "medium") return "warn";
-  return "info";
-}
+export const REVIEW_STATUS_LABEL = {
+  pending: "بانتظار المراجعة",
+  reviewed: "تمت المراجعة",
+  awaiting_report: "بانتظار التقرير",
+  recorded: "محفوظ في السجل",
+} as const;
