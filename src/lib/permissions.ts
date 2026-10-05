@@ -1,92 +1,38 @@
-import type { RoleCode } from "@/types/domain";
+import type { DemoRole } from "@/types/domain";
 
-export const PERMISSIONS = [
-  "dashboard.view",
-  "inspections.view",
-  "inspections.create",
-  "inspections.update",
-  "inspections.cancel",
-  "inspections.complete",
-  "checklists.fill",
-  "decisions.record",
-  "reports.view",
-  "reports.generate",
-  "missions.view",
-  "missions.create",
-  "missions.operate",
-  "missions.review",
-  "facilities.view",
-  "facilities.manage",
-  "zones.view",
-  "zones.manage",
-  "equipment.view",
-  "equipment.manage",
-  "devices.view",
-  "devices.manage",
-  "telemetry.view",
-  "alerts.view",
-  "alerts.manage",
-  "history.view",
-  "users.manage",
-  "settings.manage",
-  "templates.manage",
-] as const;
+export type Capability =
+  | "task.create"
+  | "task.edit"
+  | "task.cancel"
+  | "inspection.operate"
+  | "finding.review"
+  | "report.generate"
+  | "report.manage"
+  | "report.export"
+  | "records.view_all";
 
-export type Permission = (typeof PERMISSIONS)[number];
-
-const INSPECTOR: Permission[] = [
-  "dashboard.view",
-  "inspections.view",
-  "inspections.create",
-  "inspections.update",
-  "inspections.cancel",
-  "inspections.complete",
-  "checklists.fill",
-  "decisions.record",
-  "reports.view",
-  "reports.generate",
-  "missions.view",
-  "missions.create",
-  "missions.operate",
-  "missions.review",
-  "facilities.view",
-  "zones.view",
-  "equipment.view",
-  "devices.view",
-  "telemetry.view",
-  "alerts.view",
-  "history.view",
-];
-
-const OPERATOR: Permission[] = [
-  "dashboard.view",
-  "inspections.view",
-  "missions.view",
-  "missions.operate",
-  "facilities.view",
-  "zones.view",
-  "equipment.view",
-  "devices.view",
-  "telemetry.view",
-  "alerts.view",
-  "alerts.manage",
-  "history.view",
-  "reports.view",
-];
-
-const MATRIX: Record<RoleCode, readonly Permission[] | "*"> = {
-  ADMIN: "*",
-  INSPECTOR,
-  OPERATOR,
+const MATRIX: Record<DemoRole, Capability[]> = {
+  manager: [
+    "task.create",
+    "task.edit",
+    "task.cancel",
+    "inspection.operate",
+    "finding.review",
+    "report.generate",
+    "report.manage",
+    "report.export",
+    "records.view_all",
+  ],
+  inspector: ["inspection.operate", "finding.review", "report.export"],
+  report_collector: ["report.generate", "report.manage", "report.export", "records.view_all"],
 };
 
-export function can(role: RoleCode | null | undefined, permission: Permission): boolean {
-  if (!role) return false;
-  const allowed = MATRIX[role];
-  if (allowed === "*") return true;
-  return allowed.includes(permission);
+export function can(role: DemoRole, capability: Capability): boolean {
+  return MATRIX[role].includes(capability);
 }
 
-export function canAny(role: RoleCode | null | undefined, permissions: Permission[]): boolean {
-  return permissions.some((permission) => can(role, permission));
+export function roleNote(role: DemoRole): string {
+  if (role === "manager") return "عرض تشغيلي كامل لكل السجلات والإجراءات.";
+  if (role === "inspector") return "التركيز على المهام المسندة وقائمة الفحص والصور ومراجعة الملاحظات.";
+  return "التركيز على استكمال التقارير والتحقق والأرشفة والطباعة والتصدير.";
 }
